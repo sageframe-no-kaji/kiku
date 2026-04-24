@@ -1,0 +1,27 @@
+name: caretaking
+description: >
+  Extracts moments where the AI expresses personal concern for the user's
+  wellbeing — eating, sleeping, taking breaks, spending time with family.
+  The "Jewish mother" register: unsolicited care wrapped in directive language.
+
+patterns:
+  - "go (eat|get food|grab (something|a bite))"
+  - "go to (bed|sleep)"
+  - "get some (rest|sleep)"
+  - "take a break"
+  - "play with your (daughter|son|kid|kids|child|children)"
+  - "spend.* time with"
+  - "you.ve been (working|going|at it)"
+  - "you need to (eat|sleep|rest|stop)"
+  - "when did you last (eat|sleep)"
+  - "it.s (late|getting late|past)"
+
+semantic_prompt: >
+  Does this text contain the AI expressing personal concern for the user's
+  physical wellbeing or family life? Look for: unsolicited advice to eat,
+  sleep, rest, or take breaks; references to the user overworking; gentle
+  directives to step away from work; mentions of spending time with family.
+  Only flag genuine expressions of care, not task-related suggestions.
+
+model: claude-sonnet-4-6
+context_window: 1
