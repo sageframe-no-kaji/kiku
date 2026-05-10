@@ -10,6 +10,9 @@ from kiku.backends import ClassifierBackend
 from kiku.parser import Block
 from kiku.profile import ExtractionProfile
 
+# Skip trivially short responses like "OK." / "Sure."
+_MIN_SEMANTIC_CHARS = 20
+
 
 @dataclass
 class ExtractionResult:
@@ -56,22 +59,27 @@ def extract(
     # --- Tier 1: Regex ---
     compiled_patterns = _compile_patterns(profile.patterns)
     for block in blocks:
-        for pattern, raw in compiled_patterns:
-            if pattern.search(block.content):
-                matched_indices.add(block.index)
-                ctx_before, ctx_after = _get_context(
-                    blocks, block.index, profile.context_window
+        hit_patterns = [
+            raw for pattern, raw in compiled_patterns if pattern.search(block.content)
+        ]
+        if hit_patterns:
+            matched_indices.add(block.index)
+            ctx_before, ctx_after = _get_context(
+                blocks, block.index, profile.context_window
+            )
+            if len(hit_patterns) == 1:
+                reason = f"Pattern: {hit_patterns[0]}"
+            else:
+                reason = f"Patterns: {', '.join(hit_patterns)}"
+            matches.append(
+                MatchedBlock(
+                    block=block,
+                    tier="regex",
+                    reason=reason,
+                    context_before=ctx_before,
+                    context_after=ctx_after,
                 )
-                matches.append(
-                    MatchedBlock(
-                        block=block,
-                        tier="regex",
-                        reason=f"Pattern: {raw}",
-                        context_before=ctx_before,
-                        context_after=ctx_after,
-                    )
-                )
-                break  # one match per block is enough
+            )
 
     regex_match_count = len(matches)
 
@@ -84,7 +92,7 @@ def extract(
             for b in blocks
             if b.block_type == "response"
             and b.index not in matched_indices
-            and len(b.content.strip()) > 20  # skip trivially short blocks
+            and len(b.content.strip()) > _MIN_SEMANTIC_CHARS
         ]
 
         total = len(unmatched_responses)

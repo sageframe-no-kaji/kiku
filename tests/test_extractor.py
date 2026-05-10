@@ -175,6 +175,27 @@ def test_semantic_pass_with_mock() -> None:
     assert result.matches[0].tier == "semantic"
 
 
+def test_multi_pattern_match_produces_single_entry() -> None:
+    block = Block(
+        block_type="response",
+        timestamp="1:00",
+        content="Go eat something. You've been working all day.",
+        index=0,
+    )
+    profile = ExtractionProfile(
+        name="multi",
+        description="multi-pattern test",
+        patterns=["go eat", "you've been working"],
+        semantic_prompt="",
+    )
+    result = extract([block], profile, skip_semantic=True)
+    assert len(result.matches) == 1
+    match = result.matches[0]
+    assert match.reason.startswith("Patterns: ")
+    assert "go eat" in match.reason
+    assert "you've been working" in match.reason
+
+
 def test_semantic_skips_regex_matches() -> None:
     blocks = _make_blocks()
     # Profile with regex that catches "go eat" + semantic that also looks at block 1
