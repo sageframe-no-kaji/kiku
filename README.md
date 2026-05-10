@@ -1,4 +1,4 @@
-# Kiku 菊
+# Kiku 聴く
 
 **Extract classes of language behavior from AI conversation exports.**
 
