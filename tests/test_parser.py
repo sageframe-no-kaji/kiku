@@ -87,3 +87,44 @@ def test_empty_input() -> None:
 def test_no_headers() -> None:
     blocks = parse_conversation("Just some text with no headers.")
     assert blocks == []
+
+
+def test_thinking_block_multi_paragraph_stripped() -> None:
+    """Multi-paragraph thinking block is stripped; response content survives."""
+    text = """## Response:
+4/14/2026, 7:07:46 AM
+
+````plaintext
+Thought process: Initial analysis here.
+
+Second paragraph of thinking.
+
+Third paragraph.
+````
+
+Here is the actual response content."""
+    blocks = parse_conversation(text)
+    assert len(blocks) == 1
+    assert "Thought process" not in blocks[0].content
+    assert "Second paragraph" not in blocks[0].content
+    assert "Here is the actual response content" in blocks[0].content
+
+
+def test_thinking_block_header_only_line_stripped() -> None:
+    """Thought process: on its own first line, with internal blanks, is stripped."""
+    text = """## Response:
+4/14/2026, 7:07:46 AM
+
+````plaintext
+Thought process:
+First line of thinking after a newline start.
+
+Second paragraph after a blank line.
+````
+
+Here is the actual response content."""
+    blocks = parse_conversation(text)
+    assert len(blocks) == 1
+    assert "Thought process" not in blocks[0].content
+    assert "First line of thinking" not in blocks[0].content
+    assert "Here is the actual response content" in blocks[0].content
