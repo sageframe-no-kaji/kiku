@@ -33,7 +33,8 @@ class Parser(Protocol):
 
 
 from kiku.parsers.claude_markdown import ClaudeMarkdownParser  # noqa: E402
+from kiku.parsers.anthropic import AnthropicParser  # noqa: E402
 
-PARSERS: list[Parser] = [ClaudeMarkdownParser()]
+PARSERS: list[Parser] = [ClaudeMarkdownParser(), AnthropicParser()]
 
 __all__ = ["Block", "Conversation", "Parser", "PARSERS"]

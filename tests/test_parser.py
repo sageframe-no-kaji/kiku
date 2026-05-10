@@ -1,6 +1,7 @@
 """Tests for conversation parser."""
 
 from kiku.parsers import PARSERS, Parser
+from kiku.parsers.anthropic import AnthropicParser
 from kiku.parsers.claude_markdown import ClaudeMarkdownParser
 from kiku.parsers.claude_markdown import _parse_blocks as parse_conversation
 
@@ -138,6 +139,7 @@ def test_claude_markdown_parser_satisfies_protocol() -> None:
 
 
 def test_parsers_registry_shape() -> None:
-    assert len(PARSERS) == 1
+    assert len(PARSERS) == 2
     assert all(isinstance(p, Parser) for p in PARSERS)
     assert isinstance(PARSERS[0], ClaudeMarkdownParser)
+    assert isinstance(PARSERS[1], AnthropicParser)
