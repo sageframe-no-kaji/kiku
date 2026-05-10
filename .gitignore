@@ -16,6 +16,7 @@ build/
 # Private data (user's own profiles, conversations, outputs)
 profiles/private/
 corpus/private/
+ho-process/
 
 # OS
 .DS_Store
