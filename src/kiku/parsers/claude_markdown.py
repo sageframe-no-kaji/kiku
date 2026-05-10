@@ -1,27 +1,20 @@
-"""Parse exported AI conversations into structured blocks."""
+"""Parser for Claude.ai Markdown conversation exports."""
 
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+import sys
+from collections.abc import Iterator
+from pathlib import Path
+from typing import TYPE_CHECKING
 
+from kiku.parsers.block import Block
+from kiku.preprocessor import strip_base64_images
 
-@dataclass
-class Block:
-    """A single prompt or response block from a conversation."""
+if TYPE_CHECKING:
+    from kiku.parsers import Conversation
 
-    block_type: str  # "prompt" or "response"
-    timestamp: str
-    content: str
-    index: int
-    raw_header: str = ""
-
-    # Set during extraction — which tier matched and why
-    match_tier: str | None = field(default=None, repr=False)
-    match_reason: str | None = field(default=None, repr=False)
-
-
-# Matches ## Prompt: or ## Response: headers with optional timestamp on next line
+# Matches ## Prompt: or ## Response: headers
 _BLOCK_HEADER = re.compile(
     r"^## (Prompt|Response):\s*$",
     re.MULTILINE,
@@ -38,7 +31,40 @@ _THINKING_BLOCK = re.compile(
 )
 
 
-def parse_conversation(text: str) -> list[Block]:
+class ClaudeMarkdownParser:
+    """Parses Claude.ai Markdown conversation exports."""
+
+    SOURCE = "claude_markdown"
+
+    def can_parse(self, path: Path) -> bool:
+        if not path.is_file() or path.suffix.lower() not in (".md", ".markdown"):
+            return False
+        try:
+            head = path.read_text(encoding="utf-8", errors="ignore")[:8192]
+        except OSError:
+            return False
+        return _BLOCK_HEADER.search(head) is not None
+
+    def parse(self, path: Path) -> Iterator["Conversation"]:
+        from kiku.parsers import Conversation
+
+        raw_text = path.read_text(encoding="utf-8")
+        text, original_size, stripped_size = strip_base64_images(raw_text)
+        if stripped_size > 0:
+            pct = (stripped_size / original_size) * 100
+            print(
+                f"  Stripped {stripped_size:,} bytes of base64 images ({pct:.0f}%)",
+                file=sys.stderr,
+            )
+        blocks = _parse_blocks(text)
+        yield Conversation(
+            id=path.stem,
+            name=path.stem,
+            blocks=blocks,
+        )
+
+
+def _parse_blocks(text: str) -> list[Block]:
     """Split a Claude.ai markdown export into prompt/response blocks.
 
     Expects the format:
@@ -52,7 +78,6 @@ def parse_conversation(text: str) -> list[Block]:
     """
     blocks: list[Block] = []
 
-    # Find all header positions
     headers = list(_BLOCK_HEADER.finditer(text))
     if not headers:
         return blocks
@@ -61,12 +86,10 @@ def parse_conversation(text: str) -> list[Block]:
         block_type = header_match.group(1).lower()
         raw_header = header_match.group(0)
 
-        # Content extends from end of header to start of next header (or EOF)
         start = header_match.end()
         end = headers[i + 1].start() if i + 1 < len(headers) else len(text)
         raw_content = text[start:end].strip()
 
-        # Extract timestamp from first non-empty line
         lines = raw_content.split("\n")
         timestamp = ""
         content_start = 0
@@ -81,7 +104,6 @@ def parse_conversation(text: str) -> list[Block]:
 
         content = "\n".join(lines[content_start:]).strip()
 
-        # Strip thinking blocks from responses
         if block_type == "response":
             content = _THINKING_BLOCK.sub("", content).strip()
 

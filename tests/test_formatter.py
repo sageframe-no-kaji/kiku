@@ -2,7 +2,7 @@
 
 from kiku.extractor import ExtractionResult, MatchedBlock
 from kiku.formatter import format_results
-from kiku.parser import Block
+from kiku.parsers.block import Block
 
 
 def _make_result(

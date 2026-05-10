@@ -5,7 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import yaml
+# PyYAML ships no type stubs; types-PyYAML is not in this project's deps
+import yaml  # type: ignore[import-untyped]
 
 
 @dataclass

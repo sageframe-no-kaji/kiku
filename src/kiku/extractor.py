@@ -7,7 +7,8 @@ import sys
 from dataclasses import dataclass
 
 from kiku.backends import ClassifierBackend
-from kiku.parser import Block
+from kiku.parsers import Conversation
+from kiku.parsers.block import Block
 from kiku.profile import ExtractionProfile
 
 # Skip trivially short responses like "OK." / "Sure."
@@ -39,17 +40,18 @@ class MatchedBlock:
 
 
 def extract(
-    blocks: list[Block],
+    conversation: Conversation,
     profile: ExtractionProfile,
     backend: ClassifierBackend | None = None,
     skip_semantic: bool = False,
 ) -> ExtractionResult:
-    """Run extraction against a list of blocks using the given profile.
+    """Run extraction against a Conversation using the given profile.
 
     The extraction runs in two tiers:
     1. Regex: match patterns from the profile against all blocks
     2. Semantic: send unmatched response blocks to LLM for classification
     """
+    blocks = conversation.blocks
     matched_indices: set[int] = set()
     matches: list[MatchedBlock] = []
 

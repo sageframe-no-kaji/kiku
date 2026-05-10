@@ -8,9 +8,23 @@ from pathlib import Path
 
 from kiku.extractor import extract
 from kiku.formatter import format_results
-from kiku.parser import parse_conversation
-from kiku.preprocessor import strip_base64_images
+from kiku.parsers import PARSERS, Conversation
 from kiku.profile import ExtractionProfile
+
+
+def _dispatch(path: Path) -> Conversation:
+    """Dispatch the input path to the first registered parser that can handle it."""
+    for parser in PARSERS:
+        if parser.can_parse(path):
+            convs = list(parser.parse(path))
+            if len(convs) != 1:
+                raise ValueError(
+                    f"Parser {type(parser).__name__} yielded {len(convs)} "
+                    "conversations; AT-04 will lift this restriction"
+                )
+            return convs[0]
+    registered = [type(p).__name__ for p in PARSERS]
+    raise ValueError(f"No parser can handle {path}. Registered: {registered}")
 
 
 def _load_dotenv() -> None:
@@ -48,21 +62,15 @@ def main(argv: list[str] | None = None) -> None:
     print(f"Profile: {profile.name}", file=sys.stderr)
     print(f"  {profile.description}", file=sys.stderr)
 
-    # Read and preprocess
-    raw_text = conversation_path.read_text(encoding="utf-8")
-    text, original_size, stripped_size = strip_base64_images(raw_text)
-    if stripped_size > 0:
-        pct = (stripped_size / original_size) * 100
-        print(
-            f"  Stripped {stripped_size:,} bytes of base64 images ({pct:.0f}%)",
-            file=sys.stderr,
-        )
+    # Parse via dispatched parser
+    try:
+        conversation = _dispatch(conversation_path)
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    print(f"  Parsed {len(conversation.blocks)} blocks", file=sys.stderr)
 
-    # Parse
-    blocks = parse_conversation(text)
-    print(f"  Parsed {len(blocks)} blocks", file=sys.stderr)
-
-    if not blocks:
+    if not conversation.blocks:
         print("Error: no blocks found in conversation", file=sys.stderr)
         sys.exit(1)
 
@@ -80,7 +88,9 @@ def main(argv: list[str] | None = None) -> None:
             skip_semantic = True
 
     # Extract
-    result = extract(blocks, profile, backend=backend, skip_semantic=skip_semantic)
+    result = extract(
+        conversation, profile, backend=backend, skip_semantic=skip_semantic
+    )
 
     print(
         f"  Found {len(result.matches)} matches "

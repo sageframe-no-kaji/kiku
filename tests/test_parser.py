@@ -1,6 +1,8 @@
 """Tests for conversation parser."""
 
-from kiku.parser import parse_conversation
+from kiku.parsers import PARSERS, Parser
+from kiku.parsers.claude_markdown import ClaudeMarkdownParser
+from kiku.parsers.claude_markdown import _parse_blocks as parse_conversation
 
 SAMPLE_CONVERSATION = """# Conversation Title
 
@@ -128,3 +130,14 @@ Here is the actual response content."""
     assert "Thought process" not in blocks[0].content
     assert "First line of thinking" not in blocks[0].content
     assert "Here is the actual response content" in blocks[0].content
+
+
+def test_claude_markdown_parser_satisfies_protocol() -> None:
+    parser = ClaudeMarkdownParser()
+    assert isinstance(parser, Parser)
+
+
+def test_parsers_registry_shape() -> None:
+    assert len(PARSERS) == 1
+    assert all(isinstance(p, Parser) for p in PARSERS)
+    assert isinstance(PARSERS[0], ClaudeMarkdownParser)

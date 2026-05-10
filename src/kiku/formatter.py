@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from kiku.extractor import ExtractionResult
-from kiku.parser import Block
+from kiku.parsers.block import Block
 
 
 def format_results(result: ExtractionResult) -> str:

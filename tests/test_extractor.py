@@ -1,8 +1,13 @@
 """Tests for the extraction engine."""
 
 from kiku.extractor import extract
-from kiku.parser import Block
+from kiku.parsers import Conversation
+from kiku.parsers.block import Block
 from kiku.profile import ExtractionProfile
+
+
+def _conv(blocks: list[Block]) -> Conversation:
+    return Conversation(id="t", name=None, blocks=blocks)
 
 
 def _make_blocks() -> list[Block]:
@@ -58,7 +63,7 @@ def _make_profile() -> ExtractionProfile:
 def test_regex_finds_matches() -> None:
     blocks = _make_blocks()
     profile = _make_profile()
-    result = extract(blocks, profile, skip_semantic=True)
+    result = extract(_conv(blocks), profile, skip_semantic=True)
     assert result.regex_matches == 3
     assert result.semantic_matches == 0
     assert len(result.matches) == 3
@@ -67,7 +72,7 @@ def test_regex_finds_matches() -> None:
 def test_matches_are_chronological() -> None:
     blocks = _make_blocks()
     profile = _make_profile()
-    result = extract(blocks, profile, skip_semantic=True)
+    result = extract(_conv(blocks), profile, skip_semantic=True)
     indices = [m.block.index for m in result.matches]
     assert indices == sorted(indices)
 
@@ -75,7 +80,7 @@ def test_matches_are_chronological() -> None:
 def test_context_window() -> None:
     blocks = _make_blocks()
     profile = _make_profile()
-    result = extract(blocks, profile, skip_semantic=True)
+    result = extract(_conv(blocks), profile, skip_semantic=True)
 
     # First match (block 1) should have block 0 as context_before
     first = result.matches[0]
@@ -88,7 +93,7 @@ def test_context_window() -> None:
 def test_match_tier_labeled() -> None:
     blocks = _make_blocks()
     profile = _make_profile()
-    result = extract(blocks, profile, skip_semantic=True)
+    result = extract(_conv(blocks), profile, skip_semantic=True)
     for match in result.matches:
         assert match.tier == "regex"
 
@@ -101,7 +106,7 @@ def test_no_matches() -> None:
         patterns=["xyzzy_will_never_match"],
         semantic_prompt="",
     )
-    result = extract(blocks, profile, skip_semantic=True)
+    result = extract(_conv(blocks), profile, skip_semantic=True)
     assert len(result.matches) == 0
 
 
@@ -115,7 +120,7 @@ def test_case_insensitive() -> None:
         patterns=["go eat"],
         semantic_prompt="",
     )
-    result = extract(blocks, profile, skip_semantic=True)
+    result = extract(_conv(blocks), profile, skip_semantic=True)
     assert len(result.matches) == 1
 
 
@@ -137,14 +142,14 @@ def test_regex_pattern_with_alternation() -> None:
         patterns=["get some (rest|sleep)"],
         semantic_prompt="",
     )
-    result = extract(blocks, profile, skip_semantic=True)
+    result = extract(_conv(blocks), profile, skip_semantic=True)
     assert len(result.matches) == 2
 
 
 def test_result_counts() -> None:
     blocks = _make_blocks()
     profile = _make_profile()
-    result = extract(blocks, profile, skip_semantic=True)
+    result = extract(_conv(blocks), profile, skip_semantic=True)
     assert result.total_blocks == 8
     assert result.response_blocks == 4
     assert result.profile_name == "test_caretaking"
@@ -169,7 +174,7 @@ def test_semantic_pass_with_mock() -> None:
         semantic_prompt="Is this caretaking?",
         context_window=1,
     )
-    result = extract(blocks, profile, backend=FakeBackend(), skip_semantic=False)
+    result = extract(_conv(blocks), profile, backend=FakeBackend(), skip_semantic=False)
     assert result.semantic_matches == 1
     assert result.matches[0].block.index == 1
     assert result.matches[0].tier == "semantic"
@@ -188,7 +193,7 @@ def test_multi_pattern_match_produces_single_entry() -> None:
         patterns=["go eat", "you've been working"],
         semantic_prompt="",
     )
-    result = extract([block], profile, skip_semantic=True)
+    result = extract(_conv([block]), profile, skip_semantic=True)
     assert len(result.matches) == 1
     match = result.matches[0]
     assert match.reason.startswith("Patterns: ")
@@ -206,7 +211,7 @@ def test_semantic_skips_regex_matches() -> None:
         semantic_prompt="Is this caretaking?",
         context_window=1,
     )
-    result = extract(blocks, profile, backend=FakeBackend(), skip_semantic=False)
+    result = extract(_conv(blocks), profile, backend=FakeBackend(), skip_semantic=False)
     # Block 1 matched by regex already, semantic should not re-add it
     block1_matches = [m for m in result.matches if m.block.index == 1]
     assert len(block1_matches) == 1
