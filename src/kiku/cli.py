@@ -4,25 +4,21 @@ from __future__ import annotations
 
 import argparse
 import sys
+from collections.abc import Iterator
 from pathlib import Path
 
-from kiku.extractor import extract
+from kiku.extractor import extract_corpus
 from kiku.formatter import format_results
 from kiku.parsers import PARSERS, Conversation
 from kiku.profile import ExtractionProfile
 
 
-def _dispatch(path: Path) -> Conversation:
+def _dispatch(path: Path) -> Iterator[Conversation]:
     """Dispatch the input path to the first registered parser that can handle it."""
     for parser in PARSERS:
         if parser.can_parse(path):
-            convs = list(parser.parse(path))
-            if len(convs) != 1:
-                raise ValueError(
-                    f"Parser {type(parser).__name__} yielded {len(convs)} "
-                    "conversations; AT-04 will lift this restriction"
-                )
-            return convs[0]
+            yield from parser.parse(path)
+            return
     registered = [type(p).__name__ for p in PARSERS]
     raise ValueError(f"No parser can handle {path}. Registered: {registered}")
 
@@ -62,17 +58,17 @@ def main(argv: list[str] | None = None) -> None:
     print(f"Profile: {profile.name}", file=sys.stderr)
     print(f"  {profile.description}", file=sys.stderr)
 
-    # Parse via dispatched parser
+    # Parse via dispatched parser — materialize all conversations
     try:
-        conversation = _dispatch(conversation_path)
+        conversations = list(_dispatch(conversation_path))
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
-    print(f"  Parsed {len(conversation.blocks)} blocks", file=sys.stderr)
-
-    if not conversation.blocks:
-        print("Error: no blocks found in conversation", file=sys.stderr)
-        sys.exit(1)
+    total_blocks = sum(len(c.blocks) for c in conversations)
+    print(
+        f"  Parsed {len(conversations)} conversation(s), {total_blocks} blocks",
+        file=sys.stderr,
+    )
 
     # Get backend for semantic pass
     backend = None
@@ -87,13 +83,14 @@ def main(argv: list[str] | None = None) -> None:
             print("  Running regex-only mode", file=sys.stderr)
             skip_semantic = True
 
-    # Extract
-    result = extract(
-        conversation, profile, backend=backend, skip_semantic=skip_semantic
+    # Extract across the corpus
+    result = extract_corpus(
+        conversations, profile, backend=backend, skip_semantic=skip_semantic
     )
 
     print(
-        f"  Found {len(result.matches)} matches "
+        f"  Found {len(result.matches)} matches across "
+        f"{result.conversations_count} conversation(s) "
         f"({result.regex_matches} regex, {result.semantic_matches} semantic)",
         file=sys.stderr,
     )
@@ -117,7 +114,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "conversation",
-        help="Path to conversation export (Markdown)",
+        help="Path to conversation export (Claude.ai Markdown or Anthropic ZIP)",
     )
     parser.add_argument(
         "--profile",

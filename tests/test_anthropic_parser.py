@@ -116,3 +116,42 @@ def test_empty_chat_messages(tmp_path: Path) -> None:
     convs = list(AnthropicParser().parse(zip_path))
     assert len(convs) == 1
     assert convs[0].blocks == []
+
+
+def test_parse_yields_multiple_conversations(tmp_path: Path) -> None:
+    multi = [
+        {
+            "uuid": "c1",
+            "name": "First",
+            "created_at": "2026-04-14T09:00:00.000Z",
+            "updated_at": "2026-04-14T09:00:00.000Z",
+            "chat_messages": [
+                {
+                    "uuid": "m1",
+                    "sender": "human",
+                    "text": "hi",
+                    "created_at": "2026-04-14T09:00:00.000Z",
+                }
+            ],
+        },
+        {
+            "uuid": "c2",
+            "name": "Second",
+            "created_at": "2026-04-14T09:00:00.000Z",
+            "updated_at": "2026-04-14T09:00:00.000Z",
+            "chat_messages": [
+                {
+                    "uuid": "m2",
+                    "sender": "human",
+                    "text": "hi",
+                    "created_at": "2026-04-14T09:00:00.000Z",
+                }
+            ],
+        },
+    ]
+    zip_path = tmp_path / "multi.zip"
+    with zipfile.ZipFile(zip_path, "w") as zf:
+        zf.writestr("conversations.json", json.dumps(multi))
+    convs = list(AnthropicParser().parse(zip_path))
+    assert [c.id for c in convs] == ["c1", "c2"]
+    assert [c.name for c in convs] == ["First", "Second"]

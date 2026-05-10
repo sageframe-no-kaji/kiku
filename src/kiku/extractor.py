@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import sys
+from collections.abc import Iterable
 from dataclasses import dataclass
 
 from kiku.backends import ClassifierBackend
@@ -26,6 +27,7 @@ class ExtractionResult:
     regex_matches: int
     semantic_matches: int
     matches: list[MatchedBlock]
+    conversations_count: int = 1
 
 
 @dataclass
@@ -37,6 +39,8 @@ class MatchedBlock:
     reason: str  # matched pattern or LLM justification
     context_before: list[Block]
     context_after: list[Block]
+    conversation_id: str = ""
+    conversation_name: str | None = None
 
 
 def extract(
@@ -82,6 +86,8 @@ def extract(
                     reason=reason,
                     context_before=ctx_before,
                     context_after=ctx_after,
+                    conversation_id=conversation.id,
+                    conversation_name=conversation.name,
                 )
             )
 
@@ -128,6 +134,8 @@ def extract(
                         reason=justification,
                         context_before=ctx_before,
                         context_after=ctx_after,
+                        conversation_id=conversation.id,
+                        conversation_name=conversation.name,
                     )
                 )
                 semantic_match_count += 1
@@ -145,6 +153,46 @@ def extract(
         regex_matches=regex_match_count,
         semantic_matches=semantic_match_count,
         matches=matches,
+    )
+
+
+def extract_corpus(
+    conversations: Iterable[Conversation],
+    profile: ExtractionProfile,
+    backend: ClassifierBackend | None = None,
+    skip_semantic: bool = False,
+) -> ExtractionResult:
+    """Run extraction across many conversations, aggregating into one result.
+
+    Per-conversation matches stay in the order `extract()` produces them
+    (chronological by block index); across conversations, order follows
+    iteration order.
+    """
+    all_matches: list[MatchedBlock] = []
+    total_blocks = 0
+    total_response_blocks = 0
+    regex_count = 0
+    semantic_count = 0
+    convs_seen = 0
+
+    for conv in conversations:
+        convs_seen += 1
+        per = extract(conv, profile, backend=backend, skip_semantic=skip_semantic)
+        all_matches.extend(per.matches)
+        total_blocks += per.total_blocks
+        total_response_blocks += per.response_blocks
+        regex_count += per.regex_matches
+        semantic_count += per.semantic_matches
+
+    return ExtractionResult(
+        profile_name=profile.name,
+        profile_description=profile.description,
+        total_blocks=total_blocks,
+        response_blocks=total_response_blocks,
+        regex_matches=regex_count,
+        semantic_matches=semantic_count,
+        matches=all_matches,
+        conversations_count=convs_seen,
     )
 
 

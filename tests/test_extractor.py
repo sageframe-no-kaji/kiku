@@ -1,6 +1,6 @@
 """Tests for the extraction engine."""
 
-from kiku.extractor import extract
+from kiku.extractor import extract, extract_corpus
 from kiku.parsers import Conversation
 from kiku.parsers.block import Block
 from kiku.profile import ExtractionProfile
@@ -339,3 +339,57 @@ def test_semantic_pass_first_block_has_no_context() -> None:
     backend = ContextCapturingBackend()
     extract(_conv(blocks), profile, backend=backend, skip_semantic=False)
     assert backend.last_context is None
+
+
+def test_extract_corpus_aggregates_matches() -> None:
+    conv1 = Conversation(
+        id="c1",
+        name="Alpha",
+        blocks=[Block("response", "1:00", "go eat now", 0)],
+    )
+    conv2 = Conversation(
+        id="c2",
+        name="Beta",
+        blocks=[Block("response", "2:00", "go to bed", 0)],
+    )
+    profile = ExtractionProfile(
+        name="t",
+        description="t",
+        patterns=["go eat", "go to bed"],
+    )
+    result = extract_corpus([conv1, conv2], profile, skip_semantic=True)
+    assert result.conversations_count == 2
+    assert len(result.matches) == 2
+    assert result.matches[0].conversation_id == "c1"
+    assert result.matches[0].conversation_name == "Alpha"
+    assert result.matches[1].conversation_id == "c2"
+    assert result.matches[1].conversation_name == "Beta"
+
+
+def test_extract_corpus_zero_matches() -> None:
+    conv = Conversation(
+        id="c1",
+        name="Empty",
+        blocks=[Block("response", "1:00", "no triggers here", 0)],
+    )
+    profile = ExtractionProfile(
+        name="t",
+        description="t",
+        patterns=["xyzzy"],
+    )
+    result = extract_corpus([conv], profile, skip_semantic=True)
+    assert result.matches == []
+    assert result.conversations_count == 1
+
+
+def test_single_conversation_extract_populates_identity() -> None:
+    """extract() stamps conversation_id/name onto matches it produces."""
+    conv = Conversation(
+        id="c1",
+        name="Alpha",
+        blocks=[Block("response", "1:00", "go eat", 0)],
+    )
+    profile = ExtractionProfile(name="t", description="t", patterns=["go eat"])
+    result = extract(conv, profile, skip_semantic=True)
+    assert result.matches[0].conversation_id == "c1"
+    assert result.matches[0].conversation_name == "Alpha"

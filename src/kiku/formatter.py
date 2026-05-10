@@ -9,12 +9,15 @@ from kiku.parsers.block import Block
 def format_results(result: ExtractionResult) -> str:
     """Render extraction results as a Markdown document."""
     lines: list[str] = []
+    multi_conv = result.conversations_count > 1
 
     # Header
     lines.append(f"# Kiku Extraction: {result.profile_name}")
     lines.append("")
     lines.append(f"**Profile:** {result.profile_name}")
     lines.append(f"**Description:** {result.profile_description}")
+    if multi_conv:
+        lines.append(f"**Conversations:** {result.conversations_count}")
     lines.append(f"**Total blocks:** {result.total_blocks}")
     lines.append(f"**Response blocks:** {result.response_blocks}")
     lines.append(
@@ -27,7 +30,11 @@ def format_results(result: ExtractionResult) -> str:
 
     # Matches
     for i, match in enumerate(result.matches, 1):
-        lines.append(f"## Match {i} [{match.tier}]")
+        if multi_conv:
+            conv_label = match.conversation_name or match.conversation_id or "(unknown)"
+            lines.append(f"## Match {i} [{match.tier}] — {conv_label}")
+        else:
+            lines.append(f"## Match {i} [{match.tier}]")
         lines.append("")
         lines.append(f"*{match.reason}*")
         lines.append("")
