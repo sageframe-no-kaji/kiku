@@ -18,26 +18,38 @@ class AnthropicBackend:
             )
         self._client = anthropic.Anthropic(api_key=api_key)
 
-    def classify(self, text: str, prompt: str, model: str) -> tuple[bool, str]:
+    def classify(
+        self,
+        text: str,
+        prompt: str,
+        model: str,
+        context_before: str | None = None,
+    ) -> tuple[bool, str]:
         """Send a block to Claude for semantic classification.
 
         Returns:
             Tuple of (is_match, justification).
         """
+        if context_before is not None:
+            user_content = (
+                f"{prompt}\n\n"
+                f"--- PRIOR MESSAGE ---\n{context_before}\n--- END PRIOR ---\n\n"
+                f"--- TEXT TO CLASSIFY ---\n{text}\n--- END TEXT ---\n\n"
+                "Respond with YES or NO on the first line, "
+                "followed by a one-sentence justification."
+            )
+        else:
+            user_content = (
+                f"{prompt}\n\n"
+                f"--- BEGIN TEXT ---\n{text}\n--- END TEXT ---\n\n"
+                "Respond with YES or NO on the first line, "
+                "followed by a one-sentence justification."
+            )
+
         message = self._client.messages.create(
             model=model,
             max_tokens=150,
-            messages=[
-                {
-                    "role": "user",
-                    "content": (
-                        f"{prompt}\n\n"
-                        f"--- BEGIN TEXT ---\n{text}\n--- END TEXT ---\n\n"
-                        "Respond with YES or NO on the first line, "
-                        "followed by a one-sentence justification."
-                    ),
-                }
-            ],
+            messages=[{"role": "user", "content": user_content}],
         )
 
         response_text = message.content[0].text.strip()  # type: ignore[union-attr]

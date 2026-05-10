@@ -158,10 +158,34 @@ def test_result_counts() -> None:
 class FakeBackend:
     """Mock backend that classifies based on keyword."""
 
-    def classify(self, text: str, prompt: str, model: str) -> tuple[bool, str]:
+    def classify(
+        self,
+        text: str,
+        prompt: str,
+        model: str,
+        context_before: str | None = None,
+    ) -> tuple[bool, str]:
         if "working all day" in text.lower():
             return True, "Expresses concern about overwork."
         return False, "No match."
+
+
+class ContextCapturingBackend:
+    """Records what context_before was passed to classify."""
+
+    def __init__(self) -> None:
+        # Sentinel "UNSET" distinguishes "never called" from "called with None".
+        self.last_context: str | None = "UNSET"
+
+    def classify(
+        self,
+        text: str,
+        prompt: str,
+        model: str,
+        context_before: str | None = None,
+    ) -> tuple[bool, str]:
+        self.last_context = context_before
+        return True, "match"
 
 
 def test_semantic_pass_with_mock() -> None:
@@ -216,3 +240,102 @@ def test_semantic_skips_regex_matches() -> None:
     block1_matches = [m for m in result.matches if m.block.index == 1]
     assert len(block1_matches) == 1
     assert block1_matches[0].tier == "regex"
+
+
+def test_target_prompt_skips_responses() -> None:
+    """target=prompt only matches prompt blocks even if response would match."""
+    blocks = [
+        Block("prompt", "1:00", "I just wanted the simple version", 0),
+        Block("response", "1:01", "I just wanted to add error handling", 1),
+    ]
+    profile = ExtractionProfile(
+        name="t",
+        description="t",
+        patterns=["I just wanted"],
+        target="prompt",
+    )
+    result = extract(_conv(blocks), profile, skip_semantic=True)
+    assert len(result.matches) == 1
+    assert result.matches[0].block.block_type == "prompt"
+
+
+def test_target_response_skips_prompts() -> None:
+    blocks = [
+        Block("prompt", "1:00", "go eat", 0),
+        Block("response", "1:01", "go eat", 1),
+    ]
+    profile = ExtractionProfile(
+        name="t",
+        description="t",
+        patterns=["go eat"],
+        target="response",
+    )
+    result = extract(_conv(blocks), profile, skip_semantic=True)
+    assert len(result.matches) == 1
+    assert result.matches[0].block.block_type == "response"
+
+
+def test_target_both_matches_both() -> None:
+    blocks = [
+        Block("prompt", "1:00", "I just wanted clarity", 0),
+        Block("response", "1:01", "I just wanted to acknowledge that", 1),
+    ]
+    profile = ExtractionProfile(
+        name="t",
+        description="t",
+        patterns=["I just wanted"],
+        target="both",
+    )
+    result = extract(_conv(blocks), profile, skip_semantic=True)
+    assert len(result.matches) == 2
+    assert {m.block.block_type for m in result.matches} == {"prompt", "response"}
+
+
+def test_semantic_pass_receives_prior_block_content() -> None:
+    blocks = [
+        Block(
+            "prompt",
+            "1:00",
+            "Make it shorter, please — the previous one was too verbose.",
+            0,
+        ),
+        Block(
+            "response",
+            "1:01",
+            "Here is the much longer expanded version with examples and edge cases.",
+            1,
+        ),
+        Block(
+            "prompt",
+            "1:02",
+            "Make it shorter again — same problem, way too long.",
+            2,
+        ),
+    ]
+    profile = ExtractionProfile(
+        name="t",
+        description="t",
+        patterns=[],
+        semantic_prompt="Is this recognition?",
+        target="prompt",
+    )
+    backend = ContextCapturingBackend()
+    extract(_conv(blocks), profile, backend=backend, skip_semantic=False)
+    assert backend.last_context is not None
+    assert "expanded version" in backend.last_context
+
+
+def test_semantic_pass_first_block_has_no_context() -> None:
+    blocks = [
+        Block("prompt", "1:00", "wait what — that's not what I meant at all", 0),
+    ]
+    profile = ExtractionProfile(
+        name="t",
+        description="t",
+        patterns=[],
+        semantic_prompt="Is this recognition?",
+        target="prompt",
+    )
+    backend = ContextCapturingBackend()
+    extract(_conv(blocks), profile, backend=backend, skip_semantic=False)
+    assert backend.last_context is None

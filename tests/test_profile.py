@@ -101,3 +101,38 @@ patterns:
 """)
     profile = ExtractionProfile.from_yaml(path)
     assert "opus" in profile.model
+
+
+def test_target_default_is_both() -> None:
+    path = _write_yaml("""
+name: t
+description: t
+patterns:
+  - "x"
+""")
+    profile = ExtractionProfile.from_yaml(path)
+    assert profile.target == "both"
+
+
+def test_target_explicit_prompt() -> None:
+    path = _write_yaml("""
+name: t
+description: t
+target: prompt
+patterns:
+  - "x"
+""")
+    profile = ExtractionProfile.from_yaml(path)
+    assert profile.target == "prompt"
+
+
+def test_target_invalid_value_raises() -> None:
+    path = _write_yaml("""
+name: t
+description: t
+target: middle
+patterns:
+  - "x"
+""")
+    with pytest.raises(ValueError, match="target"):
+        ExtractionProfile.from_yaml(path)

@@ -61,6 +61,8 @@ def extract(
     # --- Tier 1: Regex ---
     compiled_patterns = _compile_patterns(profile.patterns)
     for block in blocks:
+        if not _block_matches_target(block, profile.target):
+            continue
         hit_patterns = [
             raw for pattern, raw in compiled_patterns if pattern.search(block.content)
         ]
@@ -88,21 +90,26 @@ def extract(
     # --- Tier 2: Semantic ---
     semantic_match_count = 0
     if not skip_semantic and backend is not None and profile.semantic_prompt:
-        # Only classify response blocks that regex didn't already catch
-        unmatched_responses = [
+        # Classify target-matching blocks that regex didn't already catch
+        candidates = [
             b
             for b in blocks
-            if b.block_type == "response"
+            if _block_matches_target(b, profile.target)
             and b.index not in matched_indices
             and len(b.content.strip()) > _MIN_SEMANTIC_CHARS
         ]
 
-        total = len(unmatched_responses)
-        for i, block in enumerate(unmatched_responses):
+        total = len(candidates)
+        for i, block in enumerate(candidates):
             _progress(i + 1, total, "Semantic pass")
+            prior = _prior_block(blocks, block.index)
+            context_before = prior.content if prior else None
             try:
                 is_match, justification = backend.classify(
-                    block.content, profile.semantic_prompt, profile.model
+                    block.content,
+                    profile.semantic_prompt,
+                    profile.model,
+                    context_before=context_before,
                 )
             except Exception as e:
                 _progress_clear()
@@ -166,6 +173,21 @@ def _get_context(
     before = blocks[max(0, pos - window) : pos]
     after = blocks[pos + 1 : pos + 1 + window]
     return before, after
+
+
+def _block_matches_target(block: Block, target: str) -> bool:
+    """Return True if the block's type matches the profile's target."""
+    if target == "both":
+        return True
+    return block.block_type == target
+
+
+def _prior_block(blocks: list[Block], index: int) -> Block | None:
+    """Return the block immediately before the given block index, or None."""
+    pos = next((i for i, b in enumerate(blocks) if b.index == index), None)
+    if pos is None or pos == 0:
+        return None
+    return blocks[pos - 1]
 
 
 def _progress(current: int, total: int, label: str) -> None:
