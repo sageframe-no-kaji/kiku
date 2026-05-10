@@ -16,7 +16,7 @@ class ExtractionProfile:
     description: str
     patterns: list[str] = field(default_factory=list)
     semantic_prompt: str = ""
-    model: str = "claude-sonnet-4-20250514"
+    model: str = "claude-sonnet-4-6"
     context_window: int = 1
 
     @classmethod
@@ -39,7 +39,7 @@ class ExtractionProfile:
         description = data.get("description", "")
         patterns = data.get("patterns", [])
         semantic_prompt = data.get("semantic_prompt", "")
-        model = data.get("model", "claude-sonnet-4-20250514")
+        model = data.get("model", "claude-sonnet-4-6")
         context_window = data.get("context_window", 1)
 
         if not patterns and not semantic_prompt:

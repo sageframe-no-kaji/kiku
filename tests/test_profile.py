@@ -88,7 +88,7 @@ patterns:
   - "test"
 """)
     profile = ExtractionProfile.from_yaml(path)
-    assert "sonnet" in profile.model
+    assert profile.model == "claude-sonnet-4-6"
 
 
 def test_custom_model() -> None:
