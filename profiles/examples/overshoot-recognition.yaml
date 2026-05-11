@@ -1,0 +1,58 @@
+name: overshoot-recognition
+description: >
+  Moments where the practitioner reacted to an AI assistant overshooting —
+  produced more, broader, or different work than was requested. Signal lives
+  in the human's response to the overshoot: explicit recognition ("I didn't
+  ask for that"), surprise reactions ("wait what"), post-hoc constraint
+  ("I just wanted the function"), or directives to undo. Code or writing.
+
+target: prompt
+
+patterns:
+  # Direct contradiction of the ask
+  - "\\bI didn'?t ask\\b"
+  - "\\bI never asked\\b"
+  - "\\bthat'?s not what I asked\\b"
+  - "\\bwhat I asked( for)? was\\b"
+
+  # Why-questioning unrequested additions
+  - "\\bwhy did you (also|add|introduce|create|write|include|expand|wrap)\\b"
+  - "\\bwhere did (the |that |this )?\\w+ come from\\b"
+
+  # Removal directives
+  - "\\b(rip|tear|cut|strip) (that|this|it|the \\w+|all of) out\\b"
+  - "\\bback (that|this|it|the \\w+) out\\b"
+  - "\\b(undo|revert|kill) (that|this|it|the \\w+|all of)\\b"
+
+  # Surprise interrupt at start of message
+  - "^wait,? (what|why|where|hold on|stop|no)\\b"
+  - "^hold on,? (what|why|wait)\\b"
+
+  # Tightly-bound "just wanted" — broader form lives in semantic
+  - "\\bI (just|only) wanted (the|to|a one|a single|that one|just one)\\b"
+
+semantic_prompt: >
+  This is a human message from a coding or writing collaboration with an AI.
+  Does this message express that the AI's prior response overshot — produced
+  more, broader, or different work than the human had requested?
+
+  YES if:
+  - The human reaches back to constrain after the fact ("all I needed was",
+    "I was only asking for…")
+  - The human reacts with surprise to unrequested additions (a wrapper,
+    abstraction, framework, section, list, caveat they didn't ask for)
+  - The human asks to remove, undo, or strip out additions
+  - Tonal signals of disappointment with scope expansion (terse "ok.", "huh.",
+    sighed acknowledgment of unwanted work)
+
+  NO if:
+  - Normal follow-up ("make it shorter", "add error handling") that
+    doesn't reference unrequested additions
+  - Substantive critique of choices on a task explicitly delegated
+  - Generic editorial feedback without the implicit signal that the
+    additions were unrequested
+
+  Respond YES or NO with a one-sentence justification.
+
+model: claude-sonnet-4-6
+context_window: 2
