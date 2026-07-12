@@ -1,0 +1,83 @@
+{
+  "keisaku": 1,
+  "works": [
+    {
+      "id": "kiku",
+      "name": "Kiku",
+      "native_script": "聴く",
+      "native_translation": "Listen",
+      "hero": "A taxonomy without instrumentation is a position paper.",
+      "importance": 4,
+      "featured": false,
+      "group": "constructive-interference",
+      "themes": [
+        "relationship",
+        "craft"
+      ],
+      "sort_order_within_group": 30,
+      "tags": [
+        "software",
+        "research-instrument",
+        "diagnostics",
+        "nlp",
+        "claude-api"
+      ],
+      "media": [
+        "software"
+      ],
+      "status": "shipped",
+      "repo": "git@github-no-kaji:sageframe-no-kaji/kiku.git",
+      "license": "MIT",
+      "deployment": [
+        {
+          "label": "GitHub repo",
+          "url": "https://github.com/sageframe-no-kaji/kiku"
+        }
+      ],
+      "tech_stack": "Python (anthropic, openai, pyyaml)",
+      "created": "2026-04-01",
+      "last_updated": "2026-05-10",
+      "conceived": "2026-04-20",
+      "short_description": "Hybrid regex + LLM extraction tool that processes AI conversation exports and surfaces patterns of language behavior. YAML-defined profiles enable two-tier detection: fast regex matching in Tier 1 for literal patterns, Claude API semantic classification in Tier 2 for patterns that resist rules. Built to operationalize the Destructive Interference taxonomy — the diagnostic framework needed an instrument that could scale. In active personal use; built to the full Ho verification stack.",
+      "substantive_description": [
+        "A diagnostic framework that can't scale to corpus is a diagnostic framework that can't generalize. Kiku is the operational answer — a two-tier detector that runs the DI taxonomy across the practitioner's accumulated AI conversation history at speed. The deeper argument is methodological: a taxonomy without instrumentation is a position paper. Instrumentation without a taxonomy is automated nothing. Kiku closes the loop. It makes the eight named failure classes actionable at corpus scale, which is the only scale at which sustained AI collaboration actually happens."
+      ],
+      "images": {
+        "gallery": []
+      },
+      "relationships": [
+        {
+          "edge_class": "narrative",
+          "target": "destructive-interference",
+          "type": "operationalizes",
+          "note": "Two-tier detection: regex for literal patterns, Claude API semantic classification for patterns that resist rules."
+        }
+      ],
+      "_keisaku": {
+        "generated_at": "2026-07-11T13:34:16",
+        "generator_version": "1",
+        "sources": {
+          "readme": "README.md",
+          "manifest": "pyproject.toml"
+        },
+        "derived_defaults": {
+          "id": "kiku",
+          "name": "Kiku 聴く",
+          "media": [
+            "software"
+          ],
+          "created": "2026-04-24",
+          "tags": [
+            "python",
+            "anthropic",
+            "openai",
+            "pyyaml"
+          ]
+        },
+        "contract_issues": [
+          "no-contract-source"
+        ]
+      }
+    }
+  ]
+}
