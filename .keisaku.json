@@ -38,9 +38,10 @@
       "created": "2026-04-01",
       "last_updated": "2026-05-10",
       "conceived": "2026-04-20",
-      "short_description": "Hybrid regex + LLM extraction tool that processes AI conversation exports and surfaces patterns of language behavior. YAML-defined profiles enable two-tier detection: fast regex matching in Tier 1 for literal patterns, Claude API semantic classification in Tier 2 for patterns that resist rules. Built to operationalize the Destructive Interference taxonomy — the diagnostic framework needed an instrument that could scale. In active personal use; built to the full Ho verification stack.",
+      "short_description": "A hybrid regex-plus-LLM detector that runs the Destructive Interference taxonomy across a writer's accumulated AI-conversation corpus.",
       "substantive_description": [
-        "A diagnostic framework that can't scale to corpus is a diagnostic framework that can't generalize. Kiku is the operational answer — a two-tier detector that runs the DI taxonomy across the practitioner's accumulated AI conversation history at speed. The deeper argument is methodological: a taxonomy without instrumentation is a position paper. Instrumentation without a taxonomy is automated nothing. Kiku closes the loop. It makes the eight named failure classes actionable at corpus scale, which is the only scale at which sustained AI collaboration actually happens."
+        "A diagnostic framework that cannot scale to a corpus cannot generalize. Kiku (聴く, \"listen\") is the operational answer — a two-tier detector that runs the eight named Destructive Interference failure classes across the practitioner's accumulated AI conversation history at speed. YAML-defined profiles drive the two tiers: fast regex matching for literal patterns, then Claude API semantic classification for the patterns that resist rules. The deeper argument is methodological: a taxonomy without instrumentation is a position paper, and instrumentation without a taxonomy is automated nothing — Kiku closes the loop, making the failure classes actionable at the corpus scale where sustained AI collaboration actually happens. It is in active personal use, built to the full Ho verification stack.",
+        "Python (mypy strict, flake8, full test coverage), combining regex matching with Claude API semantic classification driven by YAML-defined detection profiles."
       ],
       "images": {
         "gallery": []
@@ -54,10 +55,11 @@
         }
       ],
       "_keisaku": {
-        "generated_at": "2026-07-12T10:36:24",
+        "generated_at": "2026-07-13T10:31:21",
         "generator_version": "1",
         "sources": {
           "readme": "README.md",
+          "description": "metadata/description.md",
           "manifest": "pyproject.toml"
         },
         "derived_defaults": {
@@ -72,6 +74,11 @@
             "anthropic",
             "openai",
             "pyyaml"
+          ],
+          "short_description": "A hybrid regex-plus-LLM detector that runs the Destructive Interference taxonomy across a writer's accumulated AI-conversation corpus.",
+          "substantive_description": [
+            "A diagnostic framework that cannot scale to a corpus cannot generalize. Kiku (聴く, \"listen\") is the operational answer — a two-tier detector that runs the eight named Destructive Interference failure classes across the practitioner's accumulated AI conversation history at speed. YAML-defined profiles drive the two tiers: fast regex matching for literal patterns, then Claude API semantic classification for the patterns that resist rules. The deeper argument is methodological: a taxonomy without instrumentation is a position paper, and instrumentation without a taxonomy is automated nothing — Kiku closes the loop, making the failure classes actionable at the corpus scale where sustained AI collaboration actually happens. It is in active personal use, built to the full Ho verification stack.",
+            "Python (mypy strict, flake8, full test coverage), combining regex matching with Claude API semantic classification driven by YAML-defined detection profiles."
           ]
         },
         "contract_issues": [
