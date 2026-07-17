@@ -54,6 +54,8 @@
           "note": "Two-tier detection: regex for literal patterns, Claude API semantic classification for patterns that resist rules."
         }
       ],
+      "availability": "shipped",
+      "usage": "others",
       "_keisaku": {
         "generated_at": "2026-07-13T10:31:21",
         "generator_version": "1",
