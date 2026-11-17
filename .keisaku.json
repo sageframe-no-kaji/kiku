@@ -1,5 +1,5 @@
 {
-  "keisaku": 1,
+  "keisaku": 2,
   "works": [
     {
       "id": "kiku",
@@ -36,7 +36,7 @@
       ],
       "tech_stack": "Python (anthropic, openai, pyyaml)",
       "created": "2026-04-01",
-      "last_updated": "2026-07-14",
+      "last_updated": "2026-05-10",
       "conceived": "2026-04-20",
       "short_description": "A hybrid regex-plus-LLM detector that runs the Destructive Interference taxonomy across a writer's accumulated AI-conversation corpus.",
       "substantive_description": [
@@ -57,10 +57,11 @@
       "availability": "shipped",
       "usage": "others",
       "_keisaku": {
-        "generated_at": "2026-11-16T10:49:43",
+        "generated_at": "2026-11-17T15:26:26",
         "generator_version": "1",
         "sources": {
           "readme": "README.md",
+          "contract": "ho-process/kamae-6-kiku-state-memory.md",
           "description": "metadata/description.md",
           "manifest": "pyproject.toml"
         },
@@ -70,6 +71,7 @@
           "media": [
             "software"
           ],
+          "status": "in-development",
           "created": "2026-04-24",
           "tags": [
             "python",
@@ -83,9 +85,7 @@
             "Python (mypy strict, flake8, full test coverage), combining regex matching with Claude API semantic classification driven by YAML-defined detection profiles."
           ]
         },
-        "contract_issues": [
-          "no-contract-source"
-        ]
+        "contract_issues": []
       }
     }
   ]
